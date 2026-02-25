@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProofOfCreate - Immutable Ownership</title>
+  <meta name="description"
+    content="Prove you created it. Own it forever. Blockchain-based copyright proof for digital creators.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Ethers.js for Blockchain Mock/Live -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js" defer></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <!-- Ambient Gradients -->
+  <div class="bg-glow"></div>
+  <div class="bg-glow-right"></div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="logo" onclick="app.navigate('home')">ProofOfCreate.</div>
+      <div class="nav-links">
+        <a class="nav-link" id="nav-verify" onclick="app.navigate('verify')">Verify Content</a>
+        <a class="nav-link hidden" id="nav-dashboard" onclick="app.navigate('dashboard')">Dashboard</a>
+        <a class="nav-link hidden" id="nav-register" onclick="app.navigate('register')">Register</a>
+        <button class="btn btn-secondary" id="auth-btn" onclick="app.connectWallet()">Connect Wallet</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="container">
+
+    <!-- 1. Landing View -->
+    <section id="view-home" class="view">
+      <div style="max-width: 800px; margin: 4rem auto; text-align: center;">
+        <div class="badge badge-success mb-2">Polygon Testnet Live Demo</div>
+        <h1>Prove You Created It.<br>Own It Forever.</h1>
+        <p>Digital creation happens in seconds. Theft happens in milliseconds. Use the immutable power of the blockchain
+          to establish absolute, tamper-proof ownership of your original digital assets.</p>
+
+        <div style="display: flex; gap: 1rem; justify-content: center;" class="mt-4">
+          <button class="btn btn-primary" onclick="app.connectWallet()" id="hero-auth-btn">
+            Connect Web3 Wallet
+          </button>
+          <button class="btn btn-secondary" onclick="app.navigate('verify')">
+            Verify a File
+          </button>
+        </div>
+
+        <div class="glass-card mt-4" style="text-align: left; margin-top: 4rem;">
+          <h3>How it Works (The Alice & Bob Demo)</h3>
+          <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-top: 1rem; line-height: 1.8;">
+            <li><strong>Alice</strong> uploads her original art here. We compute a unique cryptographic hash directly in
+              her browser (the file never leaves her device).</li>
+            <li>We bind that hash to Alice's identity on the Polygon Smart Contract permanently recording the exact
+              timestamp.</li>
+            <li><strong>Bob</strong> downloads Alice's art and tries to claim it as his own on this platform.</li>
+            <li>The smart contract rejects Bob instantly. It mathematically proves the hash already belongs to Alice,
+              protecting her intellectual property forever.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Dashboard View -->
+    <section id="view-dashboard" class="view hidden">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end;" class="mb-4">
+        <div>
+          <h2>My Portfolio</h2>
+          <p style="margin-bottom: 0;">Welcome back, <span id="user-display-name"
+              style="color: white; font-weight: 600;">Creator</span></p>
+        </div>
+        <button class="btn btn-primary" onclick="app.navigate('register')">+ Protect New Content</button>
+      </div>
+
+      <div id="dashboard-empty" class="glass-card text-center py-4">
+        <h3 class="mb-2">No content registered yet</h3>
+        <p>Start building your immutable portfolio today.</p>
+        <button class="btn btn-secondary" onclick="app.navigate('register')">Register First Content</button>
+      </div>
+
+      <div id="dashboard-grid" class="dashboard-grid hidden">
+        <!-- Certificate Cards Injected Here -->
+      </div>
+    </section>
+
+    <!-- 3. Register Content View -->
+    <section id="view-register" class="view hidden">
+      <div style="max-width: 600px; margin: 0 auto;">
+        <h2>Register Original Content</h2>
+        <p>Your file remains on your device. We only generate a cryptographic signature (SHA-256) to index on the
+          blockchain.</p>
+
+        <div class="glass-card">
+          <label for="file-upload" class="dropzone" id="register-dropzone">
+            <div class="dropzone-icon">☁️</div>
+            <h3>Click or drag file to hash</h3>
+            <p style="margin-bottom: 0; font-size: 0.9rem;">Supports Image, Audio, Video, or Text</p>
+          </label>
+          <input type="file" id="file-upload" onchange="app.handleFileSelect(event, 'register')">
+
+          <div id="register-preview" class="hidden mt-4">
+            <h4 class="mb-1" style="color: var(--accent-primary);">Generated SHA-256 Hash:</h4>
+            <div class="hash-string mb-4" id="register-hash-display" style="font-size: 0.8rem;"></div>
+
+            <div id="register-action-area">
+              <button class="btn btn-primary" style="width: 100%;" onclick="app.registerOnBlockchain()"
+                id="btn-register-chain">
+                Write to Polygon Blockchain
+              </button>
+            </div>
+
+            <!-- Error/Success states -->
+            <div id="register-status" class="mt-4 hidden p-3 rounded" style="border-radius: 8px; padding: 1rem;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Public Verification View -->
+    <section id="view-verify" class="view hidden">
+      <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <h2>Public Verification Search</h2>
+        <p>Upload any file to instantly check if it has been copyrighted on our blockchain registry.</p>
+
+        <div class="glass-card text-left">
+          <label for="verify-upload" class="dropzone" id="verify-dropzone">
+            <div class="dropzone-icon">🔍</div>
+            <h3>Select file to verify</h3>
+          </label>
+          <input type="file" id="verify-upload" onchange="app.handleFileSelect(event, 'verify')">
+
+          <div id="verify-result" class="hidden mt-4" style="border-radius: 8px; padding: 1.5rem; text-align: center;">
+            <!-- Result injected here -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Certificate View -->
+    <section id="view-certificate" class="view hidden">
+      <div class="glass-card certificate-container">
+        <div class="seal"></div>
+        <div class="certificate-header">
+          <h2 style="margin-bottom: 0; background: none; -webkit-text-fill-color: initial; color: white;">Certificate of
+            Creation</h2>
+          <p style="margin-bottom: 0; color: #4ade80;">Polygon Blockchain Verified</p>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+          <p style="margin-bottom: 0.5rem;">This document cryptographically proves that the digital asset mapping to the
+            following SHA-256 hash was first registered by:</p>
+          <h3 id="cert-owner" style="color: white; font-size: 2rem; margin-bottom: 0.5rem;">Owner Name</h3>
+          <p style="color: var(--text-secondary);">User ID: <span id="cert-owner-id"
+              style="font-family: monospace;"></span></p>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+          <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Cryptographic Content Hash:</h4>
+          <div class="hash-string" id="cert-hash"></div>
+        </div>
+
+        <div
+          style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">
+          <div>
+            <h4 style="color: var(--text-secondary); margin-bottom: 0.25rem;">Registration Timestamp:</h4>
+            <p id="cert-timestamp" style="color: white; font-weight: 500; margin-bottom: 0;"></p>
+          </div>
+          <div class="badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+            ✓ Irrevocable Record
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 2rem;">
+        <button class="btn btn-secondary" onclick="app.navigate('dashboard')">Back to Dashboard</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer
+    style="text-align: center; padding: 2rem 0; border-top: 1px solid var(--glass-border); color: var(--text-tertiary); font-size: 0.9rem;">
+    <p>Built for the Hackathon. Not legal advice. ProofOfCreate © 2026</p>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+
+</html>
